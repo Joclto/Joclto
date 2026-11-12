@@ -1,116 +1,116 @@
-# 刘飞天 · Feitian Liu
+# 刘飞天 · Feitian Liu
+
+> 制冷及低温工程硕士 → 能源算法 → AI 工程。工作于深圳。
+>
+> 关注方向：把能源、制造等传统行业的业务问题，落成能长期稳定运行的软件系统。
+
+---
+
+## 🧰 技术栈
+
+**语言**
+
+![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![Rust](https://img.shields.io/badge/-Rust-000000?style=flat-square&logo=rust&logoColor=white)
+![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Kotlin](https://img.shields.io/badge/-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
+![SQL](https://img.shields.io/badge/-SQL-4479A1?style=flat-square&logo=postgresql&logoColor=white)
+
+- **Python**：asyncio / 多进程、PySide6 桌面端、Playwright 自动化、数据处理
+- **Rust**：egui、Tauri 桌面应用、系统级工具
+- **TypeScript / React**：前端界面与实时看板
+- **Kotlin**：Android（Jetpack Compose）端开发
+
+**后端与基础设施**
+
+- PostgreSQL、WebSocket 实时通道、REST API
+- Docker 部署、进程守护、日志分级与告警降噪
+- Windows 无人值守运维：计划任务、看门狗、自愈脚本
+
+**工程实践**
+
+- Git 分支/PR 工作流，代码走审查后合并
+- PyInstaller / Tauri 打包分发
+- 中文注释、可回溯的提交信息
+
+---
+
+## 🚀 代表项目
+
+### [InfoPush](https://github.com/Joclto/InfoPush) · 自托管消息推送服务
+
+> 一条 HTTP 请求，把消息推到你的所有设备。
+
+- HTTP 推送 + WebSocket 实时投递双通道
+- 覆盖 Android、Windows 桌面，支持 Docker 一键部署
+- PostgreSQL 持久化，端到端可控，不依赖第三方推送平台
+- 技术栈：Kotlin / Python / Rust / Tauri / PostgreSQL · MIT
+
+### [service-pilot](https://github.com/Joclto/service-pilot) · Windows 服务管理器
+
+> 把 Windows 后台服务的管理，做成一块能实时看的面板。
+
+- Tauri 2 + React 19 + Rust 构建的原生桌面应用
+- 启动 / 停止 / 监控 / 检查 Windows 后台服务，实时状态刷新
+- 面向真实运维场景：不用再跟 services.msc 和命令行搏斗
+- 技术栈：TypeScript / React / Rust / Tauri · MIT
+
+---
+
+## 🧠 我的工程习惯
+
+**1. 规划与执行分离**
+
+复杂任务不交给一个模型从头做到尾：
+
+- **Hermes**（AI 助理）负责需求拆解、方案设计、任务卡编写与代码审查；
+- **Claude Code** 负责具体编码实现；
+- 人只做两件事：**仲裁方案，验收结果**。
+
+好处是每一步都有独立的第二双眼睛：写的人不审自己，审的人不动手。
+
+**2. 最小改动优先（ponytail）**
+
+日常启用 `ponytail`（lazy senior dev 模式）约束 AI 的产出：
+
+- 能一行解决，不写两行；
+- 删除优于新增；
+- 不写没人要的抽象、配置项和"以后可能用得上"的代码；
+- 但风险逻辑必须带测试——懒的是方案，不是质量。
+
+**3. 证据驱动，跑过才算完成**
+
+不靠"看起来对"：测试通过、真实输出、日志核验之后，才算做完一件事。写代码如此，运维排障也如此。
+
+**4. 把重复劳动变成流水线**
+
+能自动化的不做第二次手工：自举式自动开发流水线、定时巡检、看门狗自愈——人只在需要判断的地方出现。
+
+**5. 克制的可观测性**
+
+日志分级，告警只推送真正需要人介入的事。**告警风暴是缺陷，不是勤奋。**
+
+**6. 长期记忆靠留档，不靠硬记**
+
+这条是在 **Hermes** 里落实的（所有 profile 全部同步），主要设置三个参数：
+
+| 参数 | 值 | 作用 |
+|---|---|---|
+| `memory.memory_char_limit` | `12000` | 常驻记忆的字符上限（原 2200） |
+| `memory.user_char_limit` | `4000` | 用户画像的字符上限（原 1375） |
+| `sessions.auto_prune` | `false` | 会话永久留存在本地，不自动清理 |
+
+原则：常驻记忆只放跨会话有效的偏好与约定，具体细节用时再从本地会话记录里检索（`session_search`），而不是预先塞满上下文。
+
+在这之上再以**插件形式安装长期记忆引擎（Hindsight 插件）**，作为 Hermes 的第三方扩展接入：
+
+- **本地嵌入式部署**：知识图谱 + 实体解析 + 多路召回；嵌入与重排模型都在本机运行，会话内容不出这台机器
+- **分工**：内置记忆负责"每次都要知道的约定"，Hindsight 负责"按需检索的历史细节"
+- **自愈**：它的守护进程会偶发启动失败（上游已知问题），因此配了看门狗——每 5 分钟探测端口，不在就自动拉起。记忆是基础设施，必须自愈，不能靠人盯
+- **检索语言对齐**：引擎默认的英文嵌入模型对中文检索基本失效（实测中文查询零命中）——按「下载量 / 生产遥测 / 双语实测榜」三份数据选型，落地 **Qwen3-Embedding-0.6B**（1024 维，Apache 2.0，C-MTEB 小模型第一），中英文召回均实测通过
 
-> 制冷及低温工程硕士 → 能源算法 → AI 工程。工作于深圳。
->
-> 关注方向：把能源、制造等传统行业的业务问题，落成能长期稳定运行的软件系统。
-
----
-
-## 🧰 技术栈
-
-**语言**
-
-![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
-![Rust](https://img.shields.io/badge/-Rust-000000?style=flat-square&logo=rust&logoColor=white)
-![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Kotlin](https://img.shields.io/badge/-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
-![SQL](https://img.shields.io/badge/-SQL-4479A1?style=flat-square&logo=postgresql&logoColor=white)
-
-- **Python**：asyncio / 多进程、PySide6 桌面端、Playwright 自动化、数据处理
-- **Rust**：egui、Tauri 桌面应用、系统级工具
-- **TypeScript / React**：前端界面与实时看板
-- **Kotlin**：Android（Jetpack Compose）端开发
-
-**后端与基础设施**
-
-- PostgreSQL、WebSocket 实时通道、REST API
-- Docker 部署、进程守护、日志分级与告警降噪
-- Windows 无人值守运维：计划任务、看门狗、自愈脚本
-
-**工程实践**
-
-- Git 分支/PR 工作流，代码走审查后合并
-- PyInstaller / Tauri 打包分发
-- 中文注释、可回溯的提交信息
-
----
-
-## 🚀 代表项目
-
-### [InfoPush](https://github.com/Joclto/InfoPush) · 自托管消息推送服务
-
-> 一条 HTTP 请求，把消息推到你的所有设备。
-
-- HTTP 推送 + WebSocket 实时投递双通道
-- 覆盖 Android、Windows 桌面，支持 Docker 一键部署
-- PostgreSQL 持久化，端到端可控，不依赖第三方推送平台
-- 技术栈：Kotlin / Python / Rust / Tauri / PostgreSQL · MIT
-
-### [service-pilot](https://github.com/Joclto/service-pilot) · Windows 服务管理器
-
-> 把 Windows 后台服务的管理，做成一块能实时看的面板。
-
-- Tauri 2 + React 19 + Rust 构建的原生桌面应用
-- 启动 / 停止 / 监控 / 检查 Windows 后台服务，实时状态刷新
-- 面向真实运维场景：不用再跟 services.msc 和命令行搏斗
-- 技术栈：TypeScript / React / Rust / Tauri · MIT
-
----
-
-## 🧠 我的工程习惯
-
-**1. 规划与执行分离**
-
-复杂任务不交给一个模型从头做到尾：
-
-- **Hermes**（AI 助理）负责需求拆解、方案设计、任务卡编写与代码审查；
-- **Claude Code** 负责具体编码实现；
-- 人只做两件事：**仲裁方案，验收结果**。
-
-好处是每一步都有独立的第二双眼睛：写的人不审自己，审的人不动手。
-
-**2. 最小改动优先（ponytail）**
-
-日常启用 `ponytail`（lazy senior dev 模式）约束 AI 的产出：
-
-- 能一行解决，不写两行；
-- 删除优于新增；
-- 不写没人要的抽象、配置项和"以后可能用得上"的代码；
-- 但风险逻辑必须带测试——懒的是方案，不是质量。
-
-**3. 证据驱动，跑过才算完成**
-
-不靠"看起来对"：测试通过、真实输出、日志核验之后，才算做完一件事。写代码如此，运维排障也如此。
-
-**4. 把重复劳动变成流水线**
-
-能自动化的不做第二次手工：自举式自动开发流水线、定时巡检、看门狗自愈——人只在需要判断的地方出现。
-
-**5. 克制的可观测性**
-
-日志分级，告警只推送真正需要人介入的事。**告警风暴是缺陷，不是勤奋。**
-
-**6. 长期记忆靠留档，不靠硬记**
-
-这条是在 **Hermes** 里落实的（所有 profile 全部同步），主要设置三个参数：
-
-| 参数 | 值 | 作用 |
-|---|---|---|
-| `memory.memory_char_limit` | `12000` | 常驻记忆的字符上限（原 2200） |
-| `memory.user_char_limit` | `4000` | 用户画像的字符上限（原 1375） |
-| `sessions.auto_prune` | `false` | 会话永久留存在本地，不自动清理 |
-
-原则：常驻记忆只放跨会话有效的偏好与约定，具体细节用时再从本地会话记录里检索（`session_search`），而不是预先塞满上下文。
-
-在这之上再加一层**外部长期记忆引擎（Hindsight）**：
-
-- **本地嵌入式部署**：知识图谱 + 实体解析 + 多路召回；嵌入与重排模型都在本机运行，会话内容不出这台机器
-- **分工**：内置记忆负责"每次都要知道的约定"，Hindsight 负责"按需检索的历史细节"
-- **自愈**：它的守护进程会偶发启动失败（上游已知问题），因此配了看门狗——每 5 分钟探测端口，不在就自动拉起。记忆是基础设施，必须自愈，不能靠人盯
-- **检索语言对齐**：引擎默认的英文嵌入模型对中文检索基本失效（实测中文查询零命中）——按「下载量 / 生产遥测 / 双语实测榜」三份数据选型，落地 **Qwen3-Embedding-0.6B**（1024 维，Apache 2.0，C-MTEB 小模型第一），中英文召回均实测通过
-
-**记不住的应该被记下来，而不是被猜出来。**
-
----
-
-<sub>这个主页会随我的工程习惯一起更新。</sub>
+**记不住的应该被记下来，而不是被猜出来。**
+
+---
+
+<sub>这个主页会随我的工程习惯一起更新。</sub>
