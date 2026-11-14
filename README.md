@@ -119,6 +119,6 @@
 
 ## 🤖 Agent Skills
 
-维护了一个可被 AI agent（Hermes 等）直接加载的运维 skill 仓库：**[hermes-skills](https://github.com/Joclto/hermes-skills)**。首发 [hermes-update-network-fix](https://github.com/Joclto/hermes-skills/tree/main/skills/hermes-update-network-fix)：修复 github.com HTTPS 被阻断网络下 `hermes update` 失败。加载方式见该仓库 README。
+维护了一个可被 AI agent（Hermes 等）直接加载的运维 skill 仓库：**[agent-skills](https://github.com/Joclto/agent-skills)**。首发 [hermes-update-network-fix](https://github.com/Joclto/agent-skills/tree/main/skills/hermes-update-network-fix)：修复 github.com HTTPS 被阻断网络下 `hermes update` 失败。加载方式见该仓库 README。
 
 <sub>这个主页会随我的工程习惯一起更新。</sub>
