@@ -1,7 +1,7 @@
 ---
 name: hermes-update-network-fix
 description: Fix hermes update failures when GitHub HTTPS is blocked.
-version: 0.1.0
+version: 0.2.0
 author: "刘飞天 (Joclto), Hermes Agent"
 license: MIT
 platforms: [windows]
@@ -13,7 +13,7 @@ metadata:
 
 # Hermes Update Network Fix Skill
 
-修复网络受限环境（对 github.com 的 TCP 443 HTTPS 流量干扰）导致的 `hermes update` 失败：Git remote 由 HTTPS 切 SSH（22 端口），Electron 下载源切 npmmirror 镜像，一次配置长期免疫。检测步骤幂等只读；修复步骤会改动 git remote 与用户环境变量，执行前先征得用户同意。完整原始教程（含 PowerShell 全量命令与收尾细节）见 `references/original-walkthrough.md`。
+修复网络受限环境（对 github.com 的 TCP 443 HTTPS 流量干扰）导致的 `hermes update` 失败：Git remote 由 HTTPS 切 SSH（22 端口），Electron 下载源切 npmmirror 镜像，一次配置长期免疫。主修复路径的全部命令内联在本文件；检测步骤幂等只读；修复步骤会改动 git remote 与用户环境变量，执行前先征得用户同意。兜底分支的精确命令（SSH key 生成、git url 重写、ssh-config 写入、PowerShell 版全量步骤）在 `references/original-walkthrough.md`。
 
 ## When to Use
 
@@ -29,7 +29,7 @@ Don't use for:
 ## Prerequisites
 
 - Windows + 源码克隆安装：`%LOCALAPPDATA%\hermes\hermes-agent\.git` 存在。
-- 一枚可用 GitHub SSH key（无则第 1 步生成登记）；npmmirror 可达（第 3 步先验证再切换）。
+- 一枚可用 GitHub SSH key（没有则按 references「第一步」生成登记）；npmmirror 可达（第 3 步先验证再切换）。
 
 ## Quick Reference
 
@@ -51,7 +51,9 @@ setx ELECTRON_MIRROR "https://npmmirror.com/mirrors/electron/"                  
 
 ### 第 0 步 · 检测（幂等只读，先跑这个）
 
-`terminal(command="curl -sS -I -m 8 https://github.com -o /dev/null -w \"%{http_code}\"; echo \" exit=$?\"")`
+```bash
+curl -sS -I -m 8 https://github.com -o /dev/null -w "%{http_code}"; echo " exit=$?"
+```
 
 判定：
 
@@ -64,17 +66,21 @@ setx ELECTRON_MIRROR "https://npmmirror.com/mirrors/electron/"                  
 ```bash
 test -d "$LOCALAPPDATA/hermes/hermes-agent/.git" && echo "source-clone: yes"
 git -C "$LOCALAPPDATA/hermes/hermes-agent" remote -v        # fetch 行应为 git@github.com:...
-powershell -NoProfile -Command '[Environment]::GetEnvironmentVariable("ELECTRON_MIRROR","User")'
+reg query "HKCU\Environment" /v ELECTRON_MIRROR             # 应返回 npmmirror 镜像 URL
 ```
 
 **必须测 github.com 本身**：干扰可以是按主机分化的（实测案例：github.com 443 被掐，同网 api.github.com 却返回 200）——其它 GitHub 域名通不代表 github.com 通。
 
 ### 第 1 步 · 验证 SSH 通道
 
-`terminal`: `ssh -T git@github.com` → 期望 `Hi <user>! You've successfully authenticated...`
+```bash
+ssh -T git@github.com
+```
 
-- `Permission denied (publickey)` → 生成并登记 key：`ssh-keygen -t ed25519 -C "邮箱"`，把 `~/.ssh/id_ed25519.pub` 内容加入 github.com/settings/keys 后重试。
-- 连接超时 / refused → 22 端口也不通，直接跳「兜底 B」（SSH over 443）。
+期望 `Hi <user>! You've successfully authenticated...`。
+
+- `Permission denied (publickey)` → 本机无可用 key：按 references「第一步」生成 ed25519 key 并登记到 GitHub 后重试。
+- 连接超时 / refused → 22 端口也不通：按 references「附录 A」改走 SSH over 443，配置生效后回到本步重验。
 - 完成标准：看到 `Hi <用户名>!` 才进第 2 步。
 
 ### 第 2 步 · remote 切 SSH 并验证 fetch
@@ -85,7 +91,7 @@ git -C "$LOCALAPPDATA/hermes/hermes-agent" fetch origin
 ```
 
 - fetch 出现 `From github.com ...` 及 `[new tag]` 行即成功。remote 带 `[blob:none]`（部分克隆）属正常特性，`set-url` 不破坏它。
-- 仍 `Permission denied` → 显式指定 key：`GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519" git -C "$LOCALAPPDATA/hermes/hermes-agent" fetch origin`。
+- 仍 `Permission denied` → 多 key 冲突：按 references「第二步」用 GIT_SSH_COMMAND 显式指定 key 后重试。
 
 ### 第 3 步 · Electron 镜像 + 清缓存
 
@@ -99,32 +105,27 @@ v0.21.6 起 Hermes 不再自动回退 npmmirror，必须手动设置。失败残
 
 ### 第 4 步 · 更新并收尾
 
-`terminal`: `hermes update` → 期望 `✓ Update complete!`，随后自动再跑一轮显示 `Already up to date!` 并重启 gateway。
-
-持久化镜像（新开窗口自动继承）：`setx ELECTRON_MIRROR "https://npmmirror.com/mirrors/electron/"`（PowerShell 等价与收尾检查——dashboard 旧进程、cua-driver 升级——见 `references/original-walkthrough.md` 第六步）。
-
-### 兜底 A · hermes update 仍走 HTTPS 拉取（更新器硬编码 URL）
-
 ```bash
-git config --global url."git@github.com:NousResearch/hermes-agent.git".insteadOf "https://github.com/NousResearch/hermes-agent.git"
+hermes update
 ```
 
-重跑 `hermes update`。
+期望 `✓ Update complete!`，随后自动再跑一轮显示 `Already up to date!` 并重启 gateway。
+
+持久化镜像（新开窗口自动继承）：
+
+```bash
+setx ELECTRON_MIRROR "https://npmmirror.com/mirrors/electron/"
+```
+
+收尾检查（dashboard 旧进程重启、cua-driver 管理员升级、版本核验）见 references「第六步」。
+
+### 兜底 A · hermes update 仍走 HTTPS 拉取
+
+现象：首次 `hermes update` 在 Git 拉取阶段（而非 Electron 阶段）报错——更新器内部硬编码了 HTTPS URL。解法：用 git 的 url 重写把该仓库 HTTPS 强制映射到 SSH（全局配置，精确命令见 references「第三步」📌 框），重跑 `hermes update`。
 
 ### 兜底 B · 22 端口也不通（SSH over 443）
 
-`~/.ssh/config` 追加（PowerShell 自动化版本见 references 附录 A）：
-
-```text
-Host github.com
-    HostName ssh.github.com
-    Port 443
-    User git
-    IdentityFile ~/.ssh/id_ed25519
-    ServerAliveInterval 30
-```
-
-`ssh -T git@github.com` 验证通过后回第 2 步。
+让 SSH 走 GitHub 官方的 443 端口入口（ssh.github.com:443）：在用户 ssh 配置里为 github.com 指定该入口（完整配置块与验证步骤见 references「附录 A」），验证 `ssh -T` 通过后回第 2 步。
 
 ## Pitfalls
 
@@ -140,4 +141,4 @@ Host github.com
 1. `git -C "$LOCALAPPDATA/hermes/hermes-agent" remote -v` → fetch/push 两行均为 `git@github.com:NousResearch/hermes-agent.git`。
 2. `git -C "$LOCALAPPDATA/hermes/hermes-agent" fetch origin` → 出现 `From github.com` 且无报错。
 3. `hermes update` 收尾出现 `Update complete!` 或 `Already up to date!`。
-4. 新开 shell 运行 `powershell -NoProfile -Command '[Environment]::GetEnvironmentVariable("ELECTRON_MIRROR","User")'` → 返回镜像 URL。
+4. `reg query "HKCU\Environment" /v ELECTRON_MIRROR` → 返回镜像 URL（= setx 已持久化到用户环境）。
